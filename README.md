@@ -31,16 +31,14 @@ Please note that NAS Download Manager is not an official Synology offering.
 ### Officially Supported Browsers
 
 - Firefox ([view listing](https://addons.mozilla.org/en-US/firefox/addon/nas-download-manager/))
-- Chrome ([view listing](https://chrome.google.com/webstore/detail/nas-download-manager/iaijiochiiocodhamehbpmdlobhgghgi))
-
-### Browsers Reported to Work
-
-These browsers are not officially supported and the extension is untested with them, but there are ways to install it.
-
-- Edge (see [how to install from Chrome Web Store](https://support.microsoft.com/en-us/help/4538971/microsoft-edge-add-or-remove-extensions) and use the Chrome link above)
-- Opera (using the [Install Chrome Extensions](https://addons.opera.com/en/extensions/details/install-chrome-extensions/) extension to install from the Chrome link above)
 
 ### Unsupported Browsers
+
+The following browsers were supported in earlier versions, but made breaking changes since the extension was released.
+
+- Chrome ([view listing](https://chrome.google.com/webstore/detail/nas-download-manager/iaijiochiiocodhamehbpmdlobhgghgi))
+- Edge (see [how to install from Chrome Web Store](https://support.microsoft.com/en-us/help/4538971/microsoft-edge-add-or-remove-extensions) and use the Chrome link above)
+- Opera (using the [Install Chrome Extensions](https://addons.opera.com/en/extensions/details/install-chrome-extensions/) extension to install from the Chrome link above)
 
 There are currently no plans to support the following browsers.
 
@@ -80,7 +78,7 @@ Please note that while the build tasks will auto-recompile, the browser may not 
 
     **Firefox**: `about:debugging` > This Firefox > Load Temporary Add-on...
 
-    **Chrome**: `about:extensions` > Enable "Developer mode" > Load unpacked
+    ~~**Chrome**: `about:extensions` > Enable "Developer mode" > Load unpacked~~
 
 ### Packing the Extension for Distribution
 
