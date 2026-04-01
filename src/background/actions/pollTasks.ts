@@ -1,52 +1,30 @@
 import type { RequestManager } from "../backgroundState";
 import { SynologyClient, ClientRequestResult } from "../../common/apis/synology/client";
 import { getErrorForFailedResponse, getErrorForConnectionFailure } from "../../common/apis/errors";
-import type { State } from "../../common/state/defaults";
+import type { CachedTasks } from "../../common/state/defaults";
+import { DEFAULT_CACHED_TASKS } from "../../common/state/defaults";
 import { saveLastSevereError } from "../../common/errorHandlers";
 import { assertNever } from "../../common/lang";
 
-type CachedTasks = Pick<
-  State,
-  | "tasks"
-  | "taskFetchFailureReason"
-  | "tasksLastInitiatedFetchTimestamp"
-  | "tasksLastCompletedFetchTimestamp"
->;
-
-function setCachedTasks(cachedTasks: Partial<CachedTasks>) {
-  return browser.storage.local.set({
-    tasksLastCompletedFetchTimestamp: Date.now(),
-    ...cachedTasks,
-  });
+function setCachedTasks(cachedTasks: CachedTasks) {
+  return browser.storage.local.set({ cachedTasks });
 }
 
 export function clearCachedTasks() {
-  const emptyState: CachedTasks = {
-    tasks: [],
-    taskFetchFailureReason: null,
-    tasksLastCompletedFetchTimestamp: null,
-    tasksLastInitiatedFetchTimestamp: null,
-  };
-
-  return browser.storage.local.set(emptyState);
+  return setCachedTasks({ ...DEFAULT_CACHED_TASKS });
 }
 
 export async function pollTasks(api: SynologyClient, manager: RequestManager): Promise<void> {
   const token = manager.startNewRequest();
-
-  const cachedTasksInit: Partial<CachedTasks> = {
-    tasksLastInitiatedFetchTimestamp: Date.now(),
-  };
+  const initiatedTimestamp = Date.now();
 
   console.log(`(${token}) polling for tasks...`);
 
   try {
-    await browser.storage.local.set(cachedTasksInit);
-
     let response;
 
     try {
-      // When changing what this requests, you almost certainly want to update STATE_VERSION.
+      // When changing what this requests, you almost certainly want to update DEFAULT_CACHED_TASKS.
       response = await api.DownloadStation.Task.List({
         offset: 0,
         limit: -1,
@@ -67,38 +45,37 @@ export async function pollTasks(api: SynologyClient, manager: RequestManager): P
       );
     }
 
+    const result: CachedTasks = {
+      tasks: [],
+      taskFetchFailureReason: null,
+      tasksLastInitiatedFetchTimestamp: initiatedTimestamp,
+      tasksLastCompletedFetchTimestamp: Date.now(),
+      lastSevereError: undefined,
+    };
+
     if (ClientRequestResult.isConnectionFailure(response)) {
       if (response.type === "missing-config") {
         if (response.which === "other") {
-          await setCachedTasks({
-            taskFetchFailureReason: "missing-config",
-          });
+          result.taskFetchFailureReason = "missing-config";
         } else if (response.which === "password") {
-          await setCachedTasks({
-            taskFetchFailureReason: "login-required",
-          });
+          result.taskFetchFailureReason = "login-required";
         } else {
           assertNever(response.which);
         }
       } else {
-        await setCachedTasks({
-          taskFetchFailureReason: {
-            failureMessage: getErrorForConnectionFailure(response),
-          },
-        });
+        result.taskFetchFailureReason = {
+          failureMessage: getErrorForConnectionFailure(response),
+        };
       }
     } else if (response.success) {
-      await setCachedTasks({
-        tasks: response.data.tasks,
-        taskFetchFailureReason: null,
-      });
+      result.tasks = response.data.tasks;
     } else {
-      await setCachedTasks({
-        taskFetchFailureReason: {
-          failureMessage: getErrorForFailedResponse(response),
-        },
-      });
+      result.taskFetchFailureReason = {
+        failureMessage: getErrorForFailedResponse(response),
+      };
     }
+
+    await setCachedTasks(result);
   } catch (e) {
     saveLastSevereError(e);
   }

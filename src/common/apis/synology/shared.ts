@@ -150,7 +150,7 @@ export async function post<O extends object>(
     }
   });
 
-  const url = `${baseUrl}/webapi/entry.cgi?${request.sid ? `_sid=${encodeURIComponent(request.sid)}` : ""}`;
+  const url = `${baseUrl}/webapi/entry.cgi`;
 
   return fetchWithErrorHandling(url, { method: "POST", body: formData }, request.timeout, {
     ...request.meta,

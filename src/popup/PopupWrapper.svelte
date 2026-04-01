@@ -21,10 +21,10 @@
 
 {#if state?.settings}
   <Popup
-    tasks={state.tasks ?? []}
-    taskFetchFailureReason={state.taskFetchFailureReason ?? null}
-    tasksLastInitiatedFetchTimestamp={state.tasksLastInitiatedFetchTimestamp ?? null}
-    tasksLastCompletedFetchTimestamp={state.tasksLastCompletedFetchTimestamp ?? null}
+    tasks={state.cachedTasks.tasks ?? []}
+    taskFetchFailureReason={state.cachedTasks.taskFetchFailureReason ?? null}
+    tasksLastInitiatedFetchTimestamp={state.cachedTasks.tasksLastInitiatedFetchTimestamp ?? null}
+    tasksLastCompletedFetchTimestamp={state.cachedTasks.tasksLastCompletedFetchTimestamp ?? null}
     visibleTasks={state.settings.visibleTasks}
     changeVisibleTasks={(visibleTasks: VisibleTaskSettings) => updateSettings({ visibleTasks })}
     taskSort={state.settings.taskSortType}

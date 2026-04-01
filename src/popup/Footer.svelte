@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from "../common/components/Icon.svelte";
   import type { IconName } from "../common/components/Icon.svelte";
-  import type { State } from "../common/state/defaults";
+  import type { CachedTasks } from "../common/state/defaults";
   import { formatMetric1024 } from "../common/format";
 
   const locale = browser.i18n.getUILanguage();
@@ -28,10 +28,10 @@
   }
 
   interface Props {
-    tasks: State["tasks"];
-    taskFetchFailureReason: State["taskFetchFailureReason"];
-    tasksLastInitiatedFetchTimestamp: State["tasksLastInitiatedFetchTimestamp"];
-    tasksLastCompletedFetchTimestamp: State["tasksLastCompletedFetchTimestamp"];
+    tasks: CachedTasks["tasks"];
+    taskFetchFailureReason: CachedTasks["taskFetchFailureReason"];
+    tasksLastInitiatedFetchTimestamp: CachedTasks["tasksLastInitiatedFetchTimestamp"];
+    tasksLastCompletedFetchTimestamp: CachedTasks["tasksLastCompletedFetchTimestamp"];
   }
 
   let {

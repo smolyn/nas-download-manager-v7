@@ -122,28 +122,35 @@ export class SynologyClient {
   public partiallyUpdateSettings(settings: Partial<SynologyClientSettings>) {
     const updatedSettings = { ...this.settings, ...settings };
     if (SETTING_NAME_KEYS.some((k) => updatedSettings[k] !== this.settings[k])) {
+      const oldSettings = this.settings;
       this.settingsVersion++;
       this.settings = updatedSettings;
-      this.maybeLogout();
+      this.maybeLogout(undefined, oldSettings);
       return true;
     } else {
       return false;
     }
   }
 
-  private getValidatedSettings(): SynologyClientSettings | ConnectionFailure {
+  private validateSettings(
+    settings: Partial<SynologyClientSettings>,
+  ): SynologyClientSettings | ConnectionFailure {
     const missingFields = SETTING_NAME_KEYS.filter((k) => {
-      const v = this.settings[k];
+      const v = settings[k];
       return v == null || v.length === 0;
     });
     if (missingFields.length === 0) {
-      return this.settings as SynologyClientSettings;
+      return settings as SynologyClientSettings;
     } else {
       return {
         type: "missing-config",
         which: missingFields.length === 1 && missingFields[0] === "passwd" ? "password" : "other",
       };
     }
+  }
+
+  private getValidatedSettings(): SynologyClientSettings | ConnectionFailure {
+    return this.validateSettings(this.settings);
   }
 
   private maybeLogin = async (request?: BaseRequest) => {
@@ -198,9 +205,12 @@ export class SynologyClient {
   //     client or session at the time the promise is resolved.
   private maybeLogout = async (
     request?: BaseRequest,
+    settingsForLogout?: Partial<SynologyClientSettings>,
   ): Promise<ClientRequestResult<{}> | "not-logged-in"> => {
     const stashedLoginPromise = this.loginPromise;
-    const settings = this.getValidatedSettings();
+    const settings = settingsForLogout
+      ? this.validateSettings(settingsForLogout)
+      : this.getValidatedSettings();
     console.log("[session] clearing loginPromise (logout)");
     this.loginPromise = undefined;
     this.synotoken = "";

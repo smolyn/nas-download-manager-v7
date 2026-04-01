@@ -1,33 +1,40 @@
-import type { State } from "./defaults";
-import { DEFAULT_STATE, STATE_VERSION } from "./defaults";
+import type { Settings, CachedTasks } from "./defaults";
+import { DEFAULT_SETTINGS, DEFAULT_CACHED_TASKS } from "./defaults";
+
+const OLD_FLAT_KEYS = [
+  "stateVersion",
+  "tasks",
+  "taskFetchFailureReason",
+  "tasksLastInitiatedFetchTimestamp",
+  "tasksLastCompletedFetchTimestamp",
+  "lastSevereError",
+];
 
 export async function maybeMigrateState() {
-  const updated = loadState(await browser.storage.local.get(null));
-  await browser.storage.local.clear();
-  return browser.storage.local.set(updated);
-}
+  const stored = await browser.storage.local.get(null);
 
-export function loadState(stored: unknown): State {
-  const s = stored as Record<string, unknown> | null | undefined;
-  if (!s || s.stateVersion !== STATE_VERSION) {
-    return { ...DEFAULT_STATE };
-  }
-  const settings = s.settings as Record<string, unknown> | undefined;
-  return {
-    ...DEFAULT_STATE,
-    ...(s as Partial<State>),
-    settings: {
-      ...DEFAULT_STATE.settings,
-      ...settings,
-      connection: { ...DEFAULT_STATE.settings.connection, ...(settings?.connection as object) },
-      visibleTasks: {
-        ...DEFAULT_STATE.settings.visibleTasks,
-        ...(settings?.visibleTasks as object),
-      },
-      notifications: {
-        ...DEFAULT_STATE.settings.notifications,
-        ...(settings?.notifications as object),
-      },
+  const oldSettings = stored.settings as Partial<Settings> | undefined;
+  const settings: Settings = {
+    ...DEFAULT_SETTINGS,
+    ...oldSettings,
+    connection: { ...DEFAULT_SETTINGS.connection, ...(oldSettings?.connection as object) },
+    visibleTasks: { ...DEFAULT_SETTINGS.visibleTasks, ...(oldSettings?.visibleTasks as object) },
+    notifications: {
+      ...DEFAULT_SETTINGS.notifications,
+      ...(oldSettings?.notifications as object),
     },
   };
+
+  // Preserve cachedTasks if it already exists (new format), otherwise reset
+  const cachedTasks: CachedTasks = (stored.cachedTasks as CachedTasks) ?? {
+    ...DEFAULT_CACHED_TASKS,
+  };
+
+  // Clean up old flat keys from pre-split storage layout
+  const keysToRemove = OLD_FLAT_KEYS.filter((k) => k in stored);
+  if (keysToRemove.length > 0) {
+    await browser.storage.local.remove(keysToRemove);
+  }
+
+  await browser.storage.local.set({ settings, cachedTasks });
 }

@@ -1,3 +1,6 @@
+import type { CachedTasks } from "./state/defaults";
+import { DEFAULT_CACHED_TASKS } from "./state/defaults";
+
 export function setupGlobalErrorHandler() {
   globalThis.addEventListener("error", (e) => {
     e.preventDefault();
@@ -20,8 +23,10 @@ ${err?.stack ? "Error stack trace: " + err.stack.trim() : "(no error stack)"}`
 
   formattedError = `Error generated at ${new Date().toLocaleString()}\n\n${formattedError}`;
 
-  const logging: Pick<import("./state/defaults").State, "lastSevereError"> = {
-    lastSevereError: formattedError,
-  };
-  browser.storage.local.set(logging);
+  browser.storage.local.get("cachedTasks").then((stored) => {
+    const current = (stored.cachedTasks as CachedTasks) ?? { ...DEFAULT_CACHED_TASKS };
+    browser.storage.local.set({
+      cachedTasks: { ...current, lastSevereError: formattedError },
+    });
+  });
 }

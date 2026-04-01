@@ -4,16 +4,19 @@ import { setupGlobalErrorHandler } from "../common/errorHandlers";
 setupGlobalErrorHandler();
 
 import { mount, unmount } from "svelte";
-import type { Settings, State } from "../common/state/defaults";
+import type { Settings, CachedTasks } from "../common/state/defaults";
+import { DEFAULT_CACHED_TASKS } from "../common/state/defaults";
 import { onStoredStateChange } from "../common/state/listen";
 import { saveLastSevereError } from "../common/errorHandlers";
 import SettingsForm from "./SettingsForm.svelte";
 
 function clearError() {
-  const clearedError: Pick<State, "lastSevereError"> = {
-    lastSevereError: undefined,
-  };
-  browser.storage.local.set(clearedError);
+  browser.storage.local.get("cachedTasks").then((stored) => {
+    const current = (stored.cachedTasks as CachedTasks) ?? { ...DEFAULT_CACHED_TASKS };
+    browser.storage.local.set({
+      cachedTasks: { ...current, lastSevereError: undefined },
+    });
+  });
 }
 
 async function saveSettings(settings: Settings): Promise<boolean> {
@@ -42,7 +45,7 @@ onStoredStateChange((state) => {
     props: {
       extensionState: state,
       saveSettings,
-      lastSevereError: state.lastSevereError,
+      lastSevereError: state.cachedTasks.lastSevereError,
       clearError,
     },
   });

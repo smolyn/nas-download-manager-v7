@@ -3,8 +3,6 @@ import { typesafeMapValues } from "../lang";
 
 export const BUG_REPORT_URL = "https://github.com/smolyn/nas-download-manager-v7/issues/new";
 
-export const STATE_VERSION = 1;
-
 export interface ConnectionSettings {
   hostname: string;
   port: number;
@@ -49,9 +47,7 @@ export interface Settings {
   showInactiveTasks: boolean;
 }
 
-export interface State {
-  stateVersion: number;
-  settings: Settings;
+export interface CachedTasks {
   tasks: DownloadStationTask[];
   taskFetchFailureReason: "missing-config" | "login-required" | { failureMessage: string } | null;
   tasksLastInitiatedFetchTimestamp: number | null;
@@ -59,38 +55,48 @@ export interface State {
   lastSevereError: string | undefined;
 }
 
-export const DEFAULT_STATE: State = {
-  stateVersion: STATE_VERSION,
-  settings: {
-    connection: {
-      hostname: "",
-      port: 5001,
-      username: "",
-      password: undefined,
-      rememberPassword: true,
-    },
-    visibleTasks: {
-      downloading: true,
-      uploading: true,
-      completed: true,
-      errored: true,
-      other: true,
-    },
-    taskSortType: "name-asc",
-    notifications: {
-      enableFeedbackNotifications: false,
-      enableCompletionNotifications: false,
-      completionPollingInterval: 60,
-    },
-    shouldHandleDownloadLinks: true,
-    badgeDisplayType: "total",
-    showInactiveTasks: true,
+export interface State {
+  settings: Settings;
+  cachedTasks: CachedTasks;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  connection: {
+    hostname: "",
+    port: 5001,
+    username: "",
+    password: undefined,
+    rememberPassword: true,
   },
+  visibleTasks: {
+    downloading: true,
+    uploading: true,
+    completed: true,
+    errored: true,
+    other: true,
+  },
+  taskSortType: "name-asc",
+  notifications: {
+    enableFeedbackNotifications: false,
+    enableCompletionNotifications: false,
+    completionPollingInterval: 60,
+  },
+  shouldHandleDownloadLinks: true,
+  badgeDisplayType: "total",
+  showInactiveTasks: true,
+};
+
+export const DEFAULT_CACHED_TASKS: CachedTasks = {
   tasks: [],
   taskFetchFailureReason: "missing-config",
   tasksLastInitiatedFetchTimestamp: null,
   tasksLastCompletedFetchTimestamp: null,
   lastSevereError: undefined,
+};
+
+export const DEFAULT_STATE: State = {
+  settings: DEFAULT_SETTINGS,
+  cachedTasks: DEFAULT_CACHED_TASKS,
 };
 
 export function getHostUrl(settings: ConnectionSettings) {
@@ -154,12 +160,14 @@ export function redactState(state: State): object {
   };
 
   return {
-    ...state,
     settings: {
       ...state.settings,
       connection: sanitizedConnection,
     },
-    lastSevereError: state.lastSevereError ? "(omitted for brevity)" : undefined,
-    tasks: state.tasks.length,
+    cachedTasks: {
+      ...state.cachedTasks,
+      lastSevereError: state.cachedTasks.lastSevereError ? "(omitted for brevity)" : undefined,
+      tasks: state.cachedTasks.tasks.length,
+    },
   };
 }
